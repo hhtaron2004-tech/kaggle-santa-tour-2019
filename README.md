@@ -1,51 +1,95 @@
 # kaggle-santa-tour-2019
 
-🎅 Santa’s Workshop Tour 2019 – Optimization Project
+#🎅 Santa’s Workshop Tour 2019 — Optimization Solver
 
-📌 Problem Overview
+📌 Overview
 
-Santa’s Workshop Tour 2019 is a Kaggle optimization challenge where 5,000 families must be scheduled to visit Santa over 100 days (Day 1 to Day 100).
+This project solves the Santa’s Workshop Tour 2019 Kaggle optimization challenge.
+The task is to assign 5,000 families to 100 days so that:
 
-Each family provides 10 preferred days.
-Assigning a family to a day that is not among their top preferences results in a penalty cost.
+Each family is scheduled as close as possible to their preferred days
 
-Additionally, every day must satisfy attendance constraints:
+Each day has between 125 and 300 visitors
 
-Minimum visitors per day: 125
+Large fluctuations in daily attendance are avoided
 
-Maximum visitors per day: 300
+The objective is to minimize the total Kaggle cost, which consists of:
 
-If daily attendance is unbalanced, an accounting penalty is applied.
-The goal is to minimize the total cost:
+Preference penalties
 
-Total Cost=Preference Penalty+Accounting Penalty
-Total Cost=Preference Penalty+Accounting Penalty
-🎯 Objective
+Daily occupancy penalties
 
-The task is to find an assignment of families to days such that:
+Accounting costs between consecutive days
 
-Families are assigned as close as possible to their preferred days
+🧠 Solution Strategy
 
-Daily attendance stays within limits
+This project implements a two-stage optimization pipeline:
 
-Large fluctuations between consecutive days are avoided
+1. Greedy Capacity-Aware Assignment
 
-The total cost is minimized
+Families are first sorted by size (largest families first), because large families are harder to place without breaking daily capacity limits.
 
-This makes the problem a large-scale constrained combinatorial optimization problem.
+Each family is then assigned to its best available preferred day (choice_0 → choice_9) as long as the target day has enough remaining capacity.
+This produces a high-quality initial schedule where most families get one of their top choices while keeping daily attendance under control.
 
-📊 Dataset
+Any families that remain unassigned after this step are placed into days with low occupancy to ensure all days move toward the valid range.
 
-The Kaggle dataset provides:
+This stage guarantees:
 
-A list of 5,000 families
+Every family is assigned
 
-For each family:
+No day is severely underfilled or overfilled
 
-Family size
+2. Local Search Improvement
 
-10 preferred days (choice_0 to choice_9)
+After a valid schedule is built, a local search (hill-climbing) optimization is applied.
 
-Each family must be assigned exactly one day.
+For each family, the algorithm:
 
-💡 Solution Approach
+Tries reassigning the family to each of its 10 preferred days
+
+Recomputes the full Kaggle cost
+
+Keeps the change only if it improves the total score
+
+This step reduces both:
+
+Preference penalties
+
+Accounting penalties
+
+while always keeping the schedule valid.
+
+🧮 Kaggle Cost Function
+
+The project fully implements the official Kaggle scoring system:
+
+Preference Penalty
+
+Families receive increasing penalties when they are assigned further away from their preferred days.
+
+Daily Occupancy Constraints
+
+Days with fewer than 125 or more than 300 people receive a very large penalty.
+
+Accounting Cost
+
+Additional penalties are applied when the number of visitors changes sharply between consecutive days, encouraging smooth daily attendance.
+
+These three components are combined into a single cost function that the optimizer minimizes.
+
+#⚙️ Workflow
+
+Load family preference and size data
+
+Sort families by size
+
+Greedily assign families to preferred days under capacity limits
+
+Fill remaining families into low-occupancy days
+
+Evaluate using the Kaggle cost function
+
+Apply local search to improve the schedule
+
+Export the final optimized submission
